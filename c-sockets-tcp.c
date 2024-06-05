@@ -25,6 +25,40 @@
 #define DESTMAC4 20
 #define DESTMAC5 15
 
+
+char *str_to_hex(char *text)
+{
+
+int text_len = strlen(text);
+char *hex_output = malloc(text_len*2 + 1); // 2 hex = 1 ASCII char + 1 for null char
+
+if(hex_output == NULL)
+{
+        perror("Failed to allocated memory.");
+        return NULL;
+}
+
+int hex_index = 0;
+
+for (int i = 0; i < strlen(text); i++)
+{
+        char t = text[i];
+
+        int char_written  = sprintf(&hex_output[hex_index], "%x", t);
+
+        if(char_written < 0)
+        {
+                perror("Failed to convert to hex.");
+                return NULL;
+        }
+
+        hex_index += 2;
+
+}
+
+return hex_output;
+}
+
 int main()
 {
  int sock_raw;
@@ -45,6 +79,7 @@ int main()
  memset(&ifreq_ifindex, 0, sizeof(ifreq_ifindex));
  strncpy(ifreq_ifindex.ifr_name, "eth0", IFNAMSIZ - 1); // giving name of Interface
 
+ /* Pass variable of type struct ifreq to ioctl() function, which will load contents into ifreq_ifindex - which contains information about the IFINDEX (SIOCGIFINDEX)  */
  if ((ioctl(sock_raw, SIOCGIFINDEX, &ifreq_ifindex)) < 0)
  {
   printf("ioctl error.");
@@ -161,11 +196,28 @@ int main()
  printf("%d\n", total_len);
 
  //
-// sendbuff[total_len++] = 0xAA;
-// sendbuff[total_len++] = 0xBB;
-// sendbuff[total_len++] = 0xCC;
-// sendbuff[total_len++] = 0xDD;
-// sendbuff[total_len++] = 0xEE;
+
+ char msg[20] = "hello friend";
+ char *msg_hex = str_to_hex(msg);
+ printf("%s\n", msg_hex);
+
+for (int i = 0; i<strlen(msg_hex); i+=2)
+ {
+	 char hex_v[3] = ""; 
+	 hex_v[0]= msg_hex[i];
+	 hex_v[1]= msg_hex[i+1];
+	 hex_v[i+2] = 0x0;
+
+	 long hex_v_long = strtol(hex_v, NULL, 16);
+	 sendbuff[total_len++] = hex_v_long;
+
+	 //strncpy(&sendbuff[total_len++],  hex_v, 3);
+	 //(sendbuff + (total_len++)) = hex_v;
+ } 
+
+//sendbuff[total_len++] = 0x0;
+
+//sendbuff[total_len++] = 0x68;
  //
 
 // tcp_h->len = htons((total_len - sizeof(struct iphdr) - sizeof(struct ethhdr)));
@@ -189,10 +241,9 @@ int main()
  saddr_ll.sll_addr[4] = DESTMAC4; // 0x14 => 20
  saddr_ll.sll_addr[5] = DESTMAC5; // 0x0f => 15
 
- char *msg = "hello";
 
  // int send_len = sendto(sock_raw, "hello", 64, 0, (const struct sockaddr*)&saddr_ll, sizeof(saddr_ll));
- int send_len = sendto(sock_raw, sendbuff, 64, 0, (const struct sockaddr *)&saddr_ll, sizeof(saddr_ll));
+ int send_len = sendto(sock_raw, sendbuff, 100, 0, (const struct sockaddr *)&saddr_ll, sizeof(saddr_ll));
 
  printf("%d\n", send_len);
 
