@@ -205,10 +205,13 @@ int main()
 
 for (int i = 0; i<strlen(msg_hex); i+=2)
  {
-	 char hex_v[3] = ""; 
-	 hex_v[0]= msg_hex[i];
-	 hex_v[1]= msg_hex[i+1];
-	 hex_v[i+2] = 0x0;
+	 char hex_v[3];
+	 strncpy(hex_v, &msg_hex[i], 2);
+
+	 // slower method
+	 //hex_v[0]= msg_hex[i];
+	 //hex_v[1]= msg_hex[i+1];
+	 //hex_v[i+2] = 0x0;
 
 	 long hex_v_long = strtol(hex_v, NULL, 16);
 	 sendbuff[total_len++] = hex_v_long;
