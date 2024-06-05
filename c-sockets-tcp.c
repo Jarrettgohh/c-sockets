@@ -129,7 +129,9 @@ int main()
 
  // printf("Sending on interface: %d\n", saddr_ll.sll_ifindex);
 
- unsigned char *sendbuff = (unsigned char *)malloc(64); // increase in case of more data
+
+ int sendbuff_len = 100;
+ unsigned char *sendbuff = (unsigned char *)malloc(sendbuff_len); // increase in case of more data
  memset(sendbuff, 0, 64);
 
  int total_len = 0;
@@ -229,7 +231,7 @@ for (int i = 0; i<strlen(msg_hex); i+=2)
  saddr_ll.sll_family = AF_PACKET;
  saddr_ll.sll_halen = ETH_ALEN;
 
- printf("Interface index: %d\n", saddr_ll.sll_ifindex);
+ //printf("Interface index: %d\n", saddr_ll.sll_ifindex);
 
  // SRC: 00:15:5d:6c:74:34
  // DST (Yoga530): 00:15:5d:1e:14:0f
@@ -243,7 +245,7 @@ for (int i = 0; i<strlen(msg_hex); i+=2)
 
 
  // int send_len = sendto(sock_raw, "hello", 64, 0, (const struct sockaddr*)&saddr_ll, sizeof(saddr_ll));
- int send_len = sendto(sock_raw, sendbuff, 100, 0, (const struct sockaddr *)&saddr_ll, sizeof(saddr_ll));
+ int send_len = sendto(sock_raw, sendbuff, sendbuff_len, 0, (const struct sockaddr *)&saddr_ll, sizeof(saddr_ll));
 
  printf("%d\n", send_len);
 
