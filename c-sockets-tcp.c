@@ -198,26 +198,38 @@ int main()
  printf("%d\n", total_len);
 
  //
+ //
 
  char msg[50] = "hello friend, how are you doing?";
+ int msg_len = strlen(msg);
  //char *msg_hex = str_to_hex(msg);
  //printf("%s\n", msg_hex);
 
+ 
  char msg_int[20];
 
  // **When writing to buffer with this method, WIRESHARK shows the TCP payload to be 1 byte (but msg is properly displayed) - while the methods below shows the accurate TCP payload of 30 bytes (msg properly displayed too) 
- //strncpy(&sendbuff[total_len++], msg, 50);
+ strncpy(&sendbuff[total_len++], msg, msg_len);
+ total_len += msg_len;
 
-for (int i = 0; i<strlen(msg); i++)
+
+for (int i = 0; i < msg_len; i++)
  {
+
+	 //sendbuff[total_len+i] = ;
 	 
-	 sprintf(&msg_int[i] ,"%d", msg[i]); // can't be used to directly access sendbuff (with &sendbuff[total_len++] as the first arg, as the type for first arg to sprintf() is char *
 
-	 char dec_v[4];
-	 strncpy(dec_v, &msg_int[i], 4);
+	 //char msg_i[1];
+	 //int sendbuff_i = total_len++;
+	 //strncpy(&sendbuff[sendbuff_i], &msg[i], 1); // works, if &sendbuff[total_len+i] works also, but TCP payload len: 0 - **reason is because "total_len"
+	 
+	 //sprintf(&msg_int[i] ,"%d", msg[i]); // can't be used to directly access sendbuff (with &sendbuff[total_len++] as the first arg, as the type for first arg to sprintf() is char *
 
-	 long dec_v_long = strtol(dec_v, NULL, 10);
-	 sendbuff[total_len++] = dec_v_long;
+	 //char dec_v[4];
+	 //strncpy(dec_v, &msg_int[i], 4);
+
+	 //long dec_v_long = strtol(dec_v, NULL, 10);
+	 //sendbuff[total_len++] = dec_v_long;
 
 	 //strncpy(&sendbuff[total_len++],  hex_v, 3);
 	 //(sendbuff + (total_len++)) = hex_v;
