@@ -130,9 +130,9 @@ int main()
  // printf("Sending on interface: %d\n", saddr_ll.sll_ifindex);
 
 
- int sendbuff_len = 100;
+ int sendbuff_len = 200;
  unsigned char *sendbuff = (unsigned char *)malloc(sendbuff_len); // increase in case of more data
- memset(sendbuff, 0, 64);
+ memset(sendbuff, 0, sendbuff_len);
 
  int total_len = 0;
 
@@ -199,26 +199,29 @@ int main()
 
  //
 
- char msg[20] = "hello friend";
- char *msg_hex = str_to_hex(msg);
- printf("%s\n", msg_hex);
+ char msg[50] = "hello friend, how are you doing?";
+ //char *msg_hex = str_to_hex(msg);
+ //printf("%s\n", msg_hex);
 
-for (int i = 0; i<strlen(msg_hex); i+=2)
- {
-	 char hex_v[3];
-	 strncpy(hex_v, &msg_hex[i], 2);
+ char msg_int[20];
 
-	 // slower method
-	 //hex_v[0]= msg_hex[i];
-	 //hex_v[1]= msg_hex[i+1];
-	 //hex_v[i+2] = 0x0;
+ strncpy(&sendbuff[total_len++], msg, 50);
 
-	 long hex_v_long = strtol(hex_v, NULL, 16);
-	 sendbuff[total_len++] = hex_v_long;
-
-	 //strncpy(&sendbuff[total_len++],  hex_v, 3);
-	 //(sendbuff + (total_len++)) = hex_v;
- } 
+//for (int i = 0; i<strlen(msg); i++)
+// {
+//
+//	 
+//	 sprintf(&msg_int[i] ,"%d\n", msg[i]); // can't be used to directly access sendbuff (with &sendbuff[total_len++] as the first arg, as the type for first arg to sprintf() is char *
+//
+//	 char dec_v[3];
+//	 strncpy(dec_v, &msg_int[i], 3);
+//
+//	 long dec_v_long = strtol(dec_v, NULL, 10);
+//	 sendbuff[total_len++] = dec_v_long;
+//
+//	 //strncpy(&sendbuff[total_len++],  hex_v, 3);
+//	 //(sendbuff + (total_len++)) = hex_v;
+// } 
 
 //sendbuff[total_len++] = 0x0;
 
