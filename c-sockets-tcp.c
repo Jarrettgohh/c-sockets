@@ -205,23 +205,23 @@ int main()
 
  char msg_int[20];
 
- strncpy(&sendbuff[total_len++], msg, 50);
+ // **When writing to buffer with this method, WIRESHARK shows the TCP payload to be 1 byte (but msg is properly displayed) - while the methods below shows the accurate TCP payload of 30 bytes (msg properly displayed too) 
+ //strncpy(&sendbuff[total_len++], msg, 50);
 
-//for (int i = 0; i<strlen(msg); i++)
-// {
-//
-//	 
-//	 sprintf(&msg_int[i] ,"%d\n", msg[i]); // can't be used to directly access sendbuff (with &sendbuff[total_len++] as the first arg, as the type for first arg to sprintf() is char *
-//
-//	 char dec_v[3];
-//	 strncpy(dec_v, &msg_int[i], 3);
-//
-//	 long dec_v_long = strtol(dec_v, NULL, 10);
-//	 sendbuff[total_len++] = dec_v_long;
-//
-//	 //strncpy(&sendbuff[total_len++],  hex_v, 3);
-//	 //(sendbuff + (total_len++)) = hex_v;
-// } 
+for (int i = 0; i<strlen(msg); i++)
+ {
+	 
+	 sprintf(&msg_int[i] ,"%d", msg[i]); // can't be used to directly access sendbuff (with &sendbuff[total_len++] as the first arg, as the type for first arg to sprintf() is char *
+
+	 char dec_v[4];
+	 strncpy(dec_v, &msg_int[i], 4);
+
+	 long dec_v_long = strtol(dec_v, NULL, 10);
+	 sendbuff[total_len++] = dec_v_long;
+
+	 //strncpy(&sendbuff[total_len++],  hex_v, 3);
+	 //(sendbuff + (total_len++)) = hex_v;
+ } 
 
 //sendbuff[total_len++] = 0x0;
 
