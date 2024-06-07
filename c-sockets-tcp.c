@@ -13,8 +13,8 @@
 #include <linux/if_packet.h>
 #include <linux/if_ether.h>
 #include <linux/ip.h>
-// #include <linux/udp.h>
 #include <linux/tcp.h>
+// #include <linux/udp.h>
 
 #include <errno.h>
 
@@ -78,7 +78,7 @@ int main()
         strncpy(ifreq_ifindex.ifr_name, "eth0", IFNAMSIZ - 1); // giving name of Interface
 
         /* Pass variable of type struct ifreq to ioctl() function, which will load contents into ifreq_ifindex - which contains information about the IFINDEX (SIOCGIFINDEX)  */
-        if ((ioctl(sock_raw, SIOCGIFINDEX, &ifreq_ifindex)) < 0)
+        if (ioctl(sock_raw, SIOCGIFINDEX, &ifreq_ifindex) < 0)
         {
                 printf("ioctl error.");
         }
@@ -134,7 +134,7 @@ int main()
         int total_len = 0;
 
         //
-        // construct Ethernet header
+        // construct Ethernet headeri
         //
         struct ethhdr *eth = (struct ethhdr *)(sendbuff);
 
