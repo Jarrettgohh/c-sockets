@@ -78,6 +78,10 @@ int main()
  struct sockaddr saddr;
  int saddr_len = sizeof(saddr);
 
+ int http_data_len = 5000;
+ unsigned char *http_data = (unsigned char *)malloc(http_data_len);
+ memset(http_data, 0, http_data_len);
+
  for (;;)
  {
 
@@ -121,18 +125,31 @@ int main()
 
    unsigned char *ip_addr = inet_ntoa(inaddr);
 
-   if (strstr(ip_addr, "152.199") == NULL)
+   if (tcp->syn == 1)
    {
     continue;
    }
 
-   printf("IP: %s\n", inet_ntoa(inaddr));
-   // printf("%s\n", strstr(ip_addr, "192.168"));
+   if (strstr(ip_addr, "44.221") == NULL)
+   {
+    continue;
+   }
 
-   unsigned char payload_slice[20];
-   strncpy(payload_slice, payload, 300);
+   if (tcp->fin == 1)
+   {
+    break;
+   }
 
-   printf("payload: %s\n", payload_slice);
+   // printf("IP: %s\n", inet_ntoa(inaddr));
+   // printf("%s\n", payload);
+
+   printf("%s\n", payload);
+   strcat(http_data, payload);
+
+   // unsigned char payload_slice[20];
+   // strncpy(payload_slice, payload, 1448);
+
+   // printf("payload: %s\n", payload_slice);
    // printf("%ld\n", sizeof(payload));
 
    // printf("%ld\n", sizeof(buf));
@@ -150,6 +167,8 @@ int main()
    printf("\n\n");
   }
  }
+
+ printf("%li\n", strlen(http_data));
 
  return 0;
 }
