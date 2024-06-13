@@ -134,7 +134,7 @@ int main()
         int total_len = 0;
 
         //
-        // construct Ethernet headeri
+        // construct Ethernet header
         //
         struct ethhdr *eth = (struct ethhdr *)(sendbuff);
 

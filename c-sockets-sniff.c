@@ -45,35 +45,28 @@ int main()
   printf("ioctl error:\n");
  }
 
- //
- // HWADDR
- //
-
- struct ifreq ifreq_hwaddr;
-
- memset(&ifreq_hwaddr, 0, sizeof(ifreq_hwaddr));
- strncpy(ifreq_hwaddr.ifr_name, IFACE, IFNAMSIZ - 1);
-
- if ((ioctl(sock_raw, SIOCGIFHWADDR, &ifreq_hwaddr)) < 0)
+ ifr.ifr_flags |= IFF_PROMISC;
+ if (ioctl(sock, SIOCSIFFLAGS, &ifr) != 0)
  {
-  printf("ioctl error:\n");
+  perror("ioctl error:\n");
  }
 
  //
- // IPADDR
+ // sockadd_ll struct
  //
 
- struct ifreq ifreq_ip;
- memset(&ifreq_ip, 0, sizeof(ifreq_ip));
- strncpy(ifreq_ip.ifr_name, IFACE, IFNAMSIZ - 1); // giving name of Interfac
+ struct sockaddr_ll saddr_ll;
+ saddr_ll.sll_ifindex = ifreq_ifindex.ifr_ifindex;
+ saddr_ll.sll_family = AF_PACKET;
+ saddr_ll.sll_halen = ETH_ALEN;
 
- if (ioctl(sock_raw, SIOCGIFADDR, &ifreq_ip) < 0) // getting IP Address
- {
-  printf("ioctl error:\n");
- }
-
- // struct sockaddr_ll saddr_ll;
- // saddr_ll.sll_ifindex = ifreq_ifindex.ifr_ifindex;
+ // 08:00:27:1a:46:34
+ saddr_ll.sll_addr[0] = 8;  // 0x08 => 8
+ saddr_ll.sll_addr[1] = 0;  // 0x15 => 21
+ saddr_ll.sll_addr[2] = 39; // 0x27 => 39
+ saddr_ll.sll_addr[3] = 26; // 0x1a => 26
+ saddr_ll.sll_addr[4] = 70; // 0x46 => 70
+ saddr_ll.sll_addr[5] = 52; // 0x34 => 52
 
  struct sockaddr saddr;
  int saddr_len = sizeof(saddr);
@@ -120,6 +113,14 @@ int main()
   // printf("%u\n", tcp_src_port);
   // printf("%u\n", tcp_dest_port);
 
+  // printf("%u\n", tcp_src_port);
+  // printf("%u\n", tcp_dest_port);
+
+  // if(tcp->syn == 1)
+  //{
+  //       printf("syn 1");
+  // }
+
   if ((tcp_src_port != 8796 && tcp_src_port != 5632) && (tcp_dest_port != 8796 && tcp_dest_port != 5632))
   {
 
@@ -127,6 +128,18 @@ int main()
 
    if (tcp->syn == 1)
    {
+
+    printf("tcpsyn");
+    if (strstr(inet_ntoa(inaddr), "192.168.1.115"))
+    {
+     printf("sending");
+    }
+
+    // if(strstr(inet_ntoa(inaddr), "44.221.145.128") && (tcp->ack == 1))
+    //{
+    //       printf("received");
+    // }
+
     continue;
    }
 
@@ -140,11 +153,14 @@ int main()
     break;
    }
 
-   // printf("IP: %s\n", inet_ntoa(inaddr));
+   // printf("%u\n", tcp_src_port);
+   // printf("%u\n", tcp_dest_port);
+
+   printf("IP: %s\n", inet_ntoa(inaddr));
    // printf("%s\n", payload);
 
-   printf("%s\n", payload);
-   strcat(http_data, payload);
+   // printf("%s\n", payload);
+   // strcat(http_data, payload);
 
    // unsigned char payload_slice[20];
    // strncpy(payload_slice, payload, 1448);
@@ -168,7 +184,8 @@ int main()
   }
  }
 
- printf("%li\n", strlen(http_data));
+ // printf("%s\n", http_data);
+ // printf("%li\n", strlen(http_data));
 
  return 0;
 }
