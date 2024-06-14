@@ -158,7 +158,7 @@ int main()
     size_t nmatch = 2;
     regmatch_t pmatch[2];
 
-    int regcomp_res = regcomp(&reg, "Host:[[:space:]][[:lower:]]*", REG_EXTENDED);
+    int regcomp_res = regcomp(&reg, "Host:[[:space:]]([[:lower:]]|\\.)*", REG_EXTENDED);
 
     if (regcomp_res)
     {
@@ -172,16 +172,22 @@ int main()
     if (!regexec(&reg, (char *)buf, nmatch, pmatch, 0))
     {
      printf("regex success\n");
+     printf("%i\n", pmatch[0].rm_eo);
+     printf("%i\n", pmatch[0].rm_so);
+
      // long long result = strtoll(buf + pmatch[1].rm_so, NULL, 10);
      // iprintf("%lld\n", result);
      printf("a matched substring \"%.*s\" is found at position %d to %d.\n",
-            pmatch[1].rm_eo - pmatch[1].rm_so, &((char *)(buf))[pmatch[1].rm_so],
-            pmatch[1].rm_so, pmatch[1].rm_eo - 1);
+            pmatch[0].rm_eo - pmatch[0].rm_so, &((char *)(buf))[pmatch[0].rm_so],
+            pmatch[0].rm_so, pmatch[0].rm_eo - 1);
     }
     else
     {
      printf("regex didn't match\n");
     }
+
+    // char dest_host[100] = pmatch[0].rm_eo - pmatch[0].rm_so;
+    // printf("dest host: %s\n", dest_host);
 
     regfree(&reg);
 
