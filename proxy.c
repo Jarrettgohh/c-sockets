@@ -52,6 +52,8 @@ int main()
   exit(1);
  }
 
+ freeaddrinfo(res);
+
  int MAX_CONN = 10;
 
  if (listen(sockfd, MAX_CONN) == -1)
@@ -79,8 +81,10 @@ int main()
   // struct in_addr *in = get_in_addr((struct sockaddr *)(&recv_addr));
   // printf("%s\n", inet_ntoa(*in));
 
-  while (1)
+  if (!fork()) // fork() a new child process - to handle the recv() and send()
   {
+
+   close(sockfd); // child process doesn't need the listener
 
    //
    // RECV
@@ -102,37 +106,53 @@ int main()
     break;
    }
 
+   printf("RECEIVED:\n");
    printf("%s", (char *)buf);
-   printf("%li\n", strlen((char *)buf));
-   break;
+   // printf("%li\n", strlen((char *)buf));
+   // break;
+
+   //
+   //
+
+   // int sockfd_secondary = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+
+   //
+   // SEND back on listening socket
+   //
+
+   char *payload = "<html><body><img src=\"https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Anonymous.svg/800px-Anonymous.svg.png\" style=\"width:400px;height:400px\"/>hello friend, its your friendly neighbourhood hacker...</body></html>";
+   // char *payload = "HELLO";
+
+   long unsigned payload_len = strlen(payload);
+   char payload_len_str[10];
+   sprintf(payload_len_str, "%lu", payload_len);
+
+   char *msg = malloc(payload_len + 50);
+   memset(msg, 0, payload_len);
+
+   sprintf(msg, "HTTP/1.1 200 OK\ncontent-length: %s\n\n%s", payload_len_str, payload);
+   printf("SENDING PAYLOAD:\n %s\n", msg);
+
+   // char *msg = "HTTP/1.1 200 OK\ncontent-length: 12\n\nHELLO FRIEND";
+   int msg_len, bytes_sent;
+
+   msg_len = strlen(msg);
+
+   if ((bytes_sent = send(new_sockfd, msg, msg_len, 0)) == -1)
+   {
+    perror("send() error: \n");
+    exit(1);
+   }
+
+   printf("bytes sent: %d\n", bytes_sent);
+
+   close(new_sockfd);
+   exit(0);
+
+   // break;
   }
 
-  //
-  //
-
-  // int sockfd_secondary = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
-
-  //
-  // SEND back on listening socket
-  //
-
-  char *msg = "HTTP/1.1 200 OK\ncontent-length: 100\n\nwasup";
-  int msg_len, bytes_sent;
-
-  msg_len = strlen(msg);
-
-  if ((bytes_sent = send(new_sockfd, msg, msg_len, 0)) == -1)
-  {
-   perror("send() error: \n");
-   exit(1);
-  }
-
-  printf("bytes sent: %d\n", bytes_sent);
-
-  freeaddrinfo(res);
-  close(sockfd);
-
-  break;
+  close(new_sockfd);
  }
 
  return 0;
