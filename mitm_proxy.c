@@ -120,7 +120,7 @@ int main()
    // SEND back on listening socket
    //
 
-   char *payload = "<html><body><img src=\"https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Anonymous.svg/800px-Anonymous.svg.png\" style=\"width:400px;height:400px\"/>hello friend, its your friendly neighbourhood hacker...</body></html>";
+   char *payload = "<html><head><link rel=\"icon\" type\"image/x-icon\" href=\"https://cdn-icons-png.flaticon.com/256/890/890132.png\"></head><body><img src=\"https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Anonymous.svg/800px-Anonymous.svg.png\" style=\"width:400px;height:400px\"/>hello friend, its your friendly neighbourhood hacker...</body></html>";
    // char *payload = "HELLO";
 
    long unsigned payload_len = strlen(payload);
