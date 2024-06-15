@@ -188,7 +188,10 @@ int main()
 
    // host_addr[strcspn(host_addr, "\n")] = 0x0; // remove newline (\n) char
 
-   if (!(strstr(host_addr, "httpbin.org") != NULL || strstr(host_addr, "httpforever.com") != NULL))
+   //
+   // ** HOSTNAME WHITELIST
+   //
+   if (!(strstr(host_addr, "httpbin.org") != NULL || strstr(host_addr, "httpforever.com") != NULL || strstr(host_addr, "neverssl.com") != NULL))
    {
     printf("abort\n");
     exit(1);
@@ -259,11 +262,11 @@ int main()
     printf("regcomp error: %s\n", reg_err_buf);
    }
 
-   char *content_len = (char *)malloc(6);
+   char *content_len_str = (char *)malloc(6);
 
    if (!regexec(&reg_i, (char *)initial_dest_res_buf, nmatch_i, pmatch_i, 0))
    {
-    sprintf(content_len, "%.*s", pmatch_i[1].rm_eo - pmatch_i[1].rm_so, &((char *)(initial_dest_res_buf))[pmatch_i[1].rm_so]);
+    sprintf(content_len_str, "%.*s", pmatch_i[1].rm_eo - pmatch_i[1].rm_so, &((char *)(initial_dest_res_buf))[pmatch_i[1].rm_so]);
    }
 
    else
@@ -274,13 +277,9 @@ int main()
 
    regfree(&reg_i);
 
-   printf("\n****Initial response bytes from dest server: %d\n", dest_recv_len);
-   printf("content length: %s\n", content_len);
-   // printf("%s\n", dest_buf);
-
    dest_recv_len_total += dest_recv_len;
 
-   long unsigned int http_data_len;
+   unsigned long int http_data_len;
 
    char *data = strstr(initial_dest_res_buf, "\r\n\r\n");
    if (data != NULL)
@@ -289,105 +288,79 @@ int main()
     http_data_len = strlen(data) - 4; // minus four for the double leading CRLF
    }
 
-   // const char http_split[10] = "\n\n";
-   // char *tok;
-
-   // // split by CLRF - to split HTTP headers and HTTP body data
-   // tok = strtok(initial_dest_res_buf, http_split);
-
-   // int i = 0;
-
-   // while (tok != NULL && i <= 1)
-   // {
-
-   //  printf("token num: %i\n", i);
-   //  printf("%s\n\n", tok);
-   //  tok = strtok(NULL, http_split);
-
-   //  i++;
-   // }
-
-   regfree(&reg_i);
-
-   exit(1);
+   printf("\n****Initial response bytes from dest server: %d\n", dest_recv_len);
+   printf("Initial response body data length: %lu\n", http_data_len);
+   printf("Expected content length: %s\n", content_len_str);
+   // printf("%s\n", dest_buf);
 
    //
-   //
+   // SEND back initial response back on listening socket
    //
 
-   while (1)
+   int bytes_sent;
+
+   if ((bytes_sent = send(new_sockfd, initial_dest_res_buf, dest_recv_len_total, 0)) == -1)
    {
-    char *dest_buf = malloc(dest_buf_len);
-
-    int dest_recv_len = recv(dest_sockfd, dest_buf, dest_buf_len, 0);
-    if (dest_recv_len == -1)
-    {
-     perror("recv() error: \n");
-     exit(1);
-    }
-    else if (dest_recv_len == 0)
-    {
-     printf("closing connection\n");
-     break;
-    }
-
-    //
-    // PARSE Content-Length value (will only be defined in the first response data)
-    //
-
-    regex_t reg;
-    size_t nmatch = 2;
-    regmatch_t pmatch[2];
-
-    int regcomp_res = regcomp(&reg, "Content-Length:[[:space:]](([[:digit:]])*)", REG_EXTENDED);
-
-    if (regcomp_res)
-    {
-     int reg_err_len = 100;
-     char reg_err_buf[reg_err_len];
-
-     regerror(regcomp_res, &reg, reg_err_buf, reg_err_len);
-     printf("regcomp error: %s\n", reg_err_buf);
-    }
-
-    char *content_len = (char *)malloc(6);
-
-    if (!regexec(&reg, (char *)dest_buf, nmatch, pmatch, 0))
-    {
-
-     sprintf(content_len, "%.*s", pmatch[1].rm_eo - pmatch[1].rm_so, &((char *)(dest_buf))[pmatch[1].rm_so]);
-    }
-
-    else
-    {
-     printf("regex didn't match\n");
-     continue;
-    }
-
-    regfree(&reg);
-
-    printf("\n****Received bytes from dest server: %d\n", dest_recv_len);
-    printf("content length: %s\n", content_len);
-    // printf("%s\n", dest_buf);
-
-    dest_recv_len_total += dest_recv_len;
-
-    //
-    // SEND back on listening socket
-    //
-
-    int bytes_sent;
-
-    if ((bytes_sent = send(new_sockfd, dest_buf, dest_recv_len_total, 0)) == -1)
-    {
-     perror("send() error: \n");
-     exit(1);
-    }
-
-    printf("Bytes sent back to client: %d\n", bytes_sent);
+    perror("send() error: \n");
+    exit(1);
    }
 
-   printf("Total bytes sent: %d\n", dest_recv_len_total);
+   printf("\nIntial response bytes sent back to client: %d\n", bytes_sent);
+
+   int content_len = atoi(content_len_str);
+
+   if (((unsigned long int)content_len - http_data_len) == 0)
+   {
+    printf("Sent back content length of %lu to client. Closing connection...\n", http_data_len);
+   }
+   else
+   {
+
+    unsigned long int remaining_content_len = (unsigned long int)content_len - http_data_len;
+    printf("%lu\n", remaining_content_len);
+    exit(1);
+
+    //
+    // RECEIVE additional chunked response
+    //
+
+    while (1)
+    {
+     char *dest_buf = malloc(dest_buf_len);
+
+     int dest_recv_len = recv(dest_sockfd, dest_buf, dest_buf_len, 0);
+     if (dest_recv_len == -1)
+     {
+      perror("recv() error: \n");
+      exit(1);
+     }
+     else if (dest_recv_len == 0)
+     {
+      printf("closing connection\n");
+      break;
+     }
+
+     printf("\n****Received bytes from dest server: %d\n", dest_recv_len);
+
+     dest_recv_len_total += dest_recv_len;
+
+     //
+     // SEND back on listening socket
+     //
+
+     int bytes_sent;
+
+     if ((bytes_sent = send(new_sockfd, dest_buf, dest_recv_len_total, 0)) == -1)
+     {
+      perror("send() error: \n");
+      exit(1);
+     }
+
+     printf("Bytes sent back to client: %d\n", bytes_sent);
+    }
+   }
+
+   printf("\n--------------------------------\nTotal bytes sent: %d\n--------------------------------\n", dest_recv_len_total);
   }
 
   // close(new_sockfd);
