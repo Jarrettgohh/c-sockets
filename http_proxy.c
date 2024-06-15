@@ -219,6 +219,102 @@ int main()
    int dest_buf_len = 65536;
    int dest_recv_len_total;
 
+   //
+   // RECEIVE INITIAL response - expected to contain HTTP response headers (with content-length, etc.)
+   //
+
+   char *initial_dest_res_buf = malloc(dest_buf_len);
+
+   int dest_recv_len = recv(dest_sockfd, initial_dest_res_buf, dest_buf_len, 0);
+   if (dest_recv_len == -1)
+   {
+    perror("recv() error: \n");
+    exit(1);
+   }
+   else if (dest_recv_len == 0)
+   {
+    printf("closing connection\n");
+    break;
+   }
+
+   //
+   // PARSE Content-Length value (will only be defined in the first response data)
+   //
+
+   // printf("%s\n", initial_dest_res_buf);
+
+   regex_t reg_i;
+   size_t nmatch_i = 2;
+   regmatch_t pmatch_i[2];
+
+   // regex expression to match content-length HTTP headers value
+   int regcomp_res_i = regcomp(&reg_i, "Content-Length:[[:space:]](([[:digit:]])*)", REG_EXTENDED);
+
+   if (regcomp_res_i)
+   {
+    int reg_err_len = 100;
+    char reg_err_buf[reg_err_len];
+
+    regerror(regcomp_res_i, &reg, reg_err_buf, reg_err_len);
+    printf("regcomp error: %s\n", reg_err_buf);
+   }
+
+   char *content_len = (char *)malloc(6);
+
+   if (!regexec(&reg_i, (char *)initial_dest_res_buf, nmatch_i, pmatch_i, 0))
+   {
+    sprintf(content_len, "%.*s", pmatch_i[1].rm_eo - pmatch_i[1].rm_so, &((char *)(initial_dest_res_buf))[pmatch_i[1].rm_so]);
+   }
+
+   else
+   {
+    printf("regex didn't match\n");
+    continue;
+   }
+
+   regfree(&reg_i);
+
+   printf("\n****Initial response bytes from dest server: %d\n", dest_recv_len);
+   printf("content length: %s\n", content_len);
+   // printf("%s\n", dest_buf);
+
+   dest_recv_len_total += dest_recv_len;
+
+   long unsigned int http_data_len;
+
+   char *data = strstr(initial_dest_res_buf, "\r\n\r\n");
+   if (data != NULL)
+   {
+
+    http_data_len = strlen(data) - 4; // minus four for the double leading CRLF
+   }
+
+   // const char http_split[10] = "\n\n";
+   // char *tok;
+
+   // // split by CLRF - to split HTTP headers and HTTP body data
+   // tok = strtok(initial_dest_res_buf, http_split);
+
+   // int i = 0;
+
+   // while (tok != NULL && i <= 1)
+   // {
+
+   //  printf("token num: %i\n", i);
+   //  printf("%s\n\n", tok);
+   //  tok = strtok(NULL, http_split);
+
+   //  i++;
+   // }
+
+   regfree(&reg_i);
+
+   exit(1);
+
+   //
+   //
+   //
+
    while (1)
    {
     char *dest_buf = malloc(dest_buf_len);
