@@ -82,11 +82,11 @@ int main()
 
   if ((new_sockfd = accept(sockfd, (struct sockaddr *)&recv_addr, &addr_size)) == -1)
   {
-   perror("acccept() error: \n");
+   perror("accept() error: \n");
    exit(1);
   }
 
-  printf("new connection\n");
+  printf("\n**New connection\n");
 
   if (!fork()) // child process
   {
@@ -122,10 +122,6 @@ int main()
 
    strcat(req, (char *)buf);
 
-   //
-   // CREATE NEW SOCKET - connect to the destination server
-   //
-
    struct addrinfo hints, *res;
 
    // struct in_addr *in = get_in_addr((struct sockaddr *)(&recv_addr));
@@ -152,6 +148,10 @@ int main()
 
    // printf("Peer IP address: %s\n", ipstr);
    // printf("Peer port      : %d\n", port);
+
+   //
+   // PARSE the host address from the HTTP request headers
+   //
 
    regex_t reg;
    size_t nmatch = 2;
@@ -200,6 +200,10 @@ int main()
    printf("Proxying traffic to host: %s\n", host_addr);
    getaddrinfo(host_addr, "80", &hints, &res);
 
+   //
+   // CREATE NEW SOCKET - connect to the destination server
+   //
+
    int dest_sockfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
    if (connect(dest_sockfd, res->ai_addr, res->ai_addrlen) == -1)
    {
@@ -236,7 +240,7 @@ int main()
    }
    else if (dest_recv_len == 0)
    {
-    printf("closing connection\n");
+    printf("closing connection...\n");
     break;
    }
 
@@ -309,12 +313,19 @@ int main()
 
    int content_len = atoi(content_len_str);
 
+   //
+   // If the entire length as defined in Content-Length HTTP request headers is already sent back in the first response - do not continue receiving on this socket, let it close at the end of the loop
+   //
    if (((unsigned long int)content_len - http_data_len) == 0)
    {
-    printf("Sent back content length of %lu to client. Closing connection...\n", http_data_len);
+    printf("Sent back content length of %lu to client\nClosing connection...\n", http_data_len);
    }
    else
    {
+
+    //
+    // Determine additional chunked data length to receive
+    //
 
     unsigned long int remaining_content_len = (unsigned long int)content_len - http_data_len;
     printf("%lu\n", remaining_content_len);
@@ -360,7 +371,8 @@ int main()
     }
    }
 
-   printf("\n--------------------------------\nTotal bytes sent: %d\n--------------------------------\n", dest_recv_len_total);
+   printf("\n--------------------------------\nTotal bytes sent to client from host %s: %d\n--------------------------------\n", host_addr, dest_recv_len_total);
+   break;
   }
 
   // close(new_sockfd);
