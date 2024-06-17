@@ -113,7 +113,7 @@ int main()
    }
    else if (recv_len == 0)
    {
-    printf("[-] Closing peer connection from client...\n");
+    printf("\n[-] Closing peer connection from client...\n");
     exit(0);
    }
 
@@ -124,30 +124,9 @@ int main()
 
    struct addrinfo hints, *res;
 
-   // struct in_addr *in = get_in_addr((struct sockaddr *)(&recv_addr));
-   // char dest_addr[20];
-
-   // sprintf(dest_addr ,"%s", inet_ntoa(*in));
-   // printf("%s\n", dest_addr);
-
    memset(&hints, 0, sizeof hints);
    hints.ai_family = AF_UNSPEC;
    hints.ai_socktype = SOCK_STREAM;
-
-   // char ipstr[INET_ADDRSTRLEN];
-   // struct sockaddr_storage addr;
-
-   // socklen_t len = sizeof addr;
-   // getpeername(new_sockfd, (struct sockaddr*)&addr, &len);
-
-   // int port;
-   // struct sockaddr_in *s = (struct sockaddr_in *)&addr;
-
-   // port = ntohs(s->sin_port);
-   // inet_ntop(AF_INET, &s->sin_addr, ipstr, sizeof ipstr);
-
-   // printf("Peer IP address: %s\n", ipstr);
-   // printf("Peer port      : %d\n", port);
 
    //
    // PARSE the host address from the HTTP request headers
@@ -175,8 +154,22 @@ int main()
 
     sprintf(host_addr, "%.*s", pmatch[1].rm_eo - pmatch[1].rm_so, &((char *)(buf))[pmatch[1].rm_so]);
 
-    // unsigned int host_addr_len = strlen(host_addr);
+    //
+    // free buffer that is not in use
+    //
+    free(buf);
+
+    //
+    // realloc memory to actual length
+    //
+    unsigned int host_addr_len = strlen(host_addr);
+    host_addr = (char *)realloc(host_addr, host_addr_len + 1);
+
+    // printf("%lu\n", strlen(host_addr));
     // host_addr = (char *)realloc(host_addr, host_addr_len);
+
+    // printf("%s\n", host_addr);
+    // exit(1);
    }
 
    else
@@ -185,8 +178,6 @@ int main()
    }
 
    regfree(&reg);
-
-   // host_addr[strcspn(host_addr, "\n")] = 0x0; // remove newline (\n) char
 
    //
    // ** HOSTNAME WHITELIST
@@ -223,8 +214,13 @@ int main()
     exit(1);
    }
 
+   //
+   // free buffer
+   //
+   free(req);
+
    int dest_buf_len = 65536;
-   int dest_recv_len_total;
+   int dest_recv_len_total = 0;
 
    //
    // RECEIVE INITIAL response - expected to contain HTTP response headers (with content-length, etc.)
@@ -247,8 +243,6 @@ int main()
    //
    // PARSE Content-Length value (will only be defined in the first response data)
    //
-
-   // printf("%s\n", initial_dest_res_buf);
 
    regex_t reg_i;
    size_t nmatch_i = 2;
@@ -293,9 +287,8 @@ int main()
    }
 
    printf("\n[>] Initial response bytes received from dest server: %d\n", dest_recv_len);
-   printf("** Initial response body data length: %lu\n", http_data_len);
-   printf("** Expected content length: %s\n", content_len_str);
-   // printf("%s\n", dest_buf);
+   printf("** Initial content length received: %lu\n", http_data_len);
+   printf("** Expected total content length: %s\n", content_len_str);
 
    //
    // SEND back initial response back on listening socket
@@ -314,13 +307,15 @@ int main()
    int content_len = atoi(content_len_str);
 
    //
+   // free buffer
+   //
+   free(initial_dest_res_buf);
+   free(content_len_str);
+
+   //
    // If the entire length as defined in Content-Length HTTP request headers is already sent back in the first response - do not continue receiving on this socket, let it close at the end of the loop
    //
-   if (((unsigned long int)content_len - http_data_len) == 0)
-   {
-    printf("[+] Sent back content length of %lu to client\nClosing connection peer connection from client...\n", http_data_len);
-   }
-   else
+   if (!((unsigned long int)content_len - http_data_len) == 0)
    {
 
     //
@@ -347,7 +342,7 @@ int main()
      }
      else if (dest_recv_len == 0)
      {
-      printf("[-] Closing peer connection from client...\n");
+      printf("\n\n[-] Closing peer connection from client...\n");
       break;
      }
 
@@ -377,15 +372,16 @@ int main()
    }
 
    printf("\n--------------------------------\n\nTotal bytes proxied from host %s to client (including HTTP response headers): %d\n\n--------------------------------\n", host_addr, dest_recv_len_total);
-   printf("[-] Closing peer connection from client...\n\n");
+   printf("\n\n[-] Closing peer connection from client...\n\n");
+
+   //
+   // free buffer
+   //
+   free(host_addr);
+   free(dest_buf);
 
    break;
   }
-
-  // close(new_sockfd);
-  // exit(0);
-
-  // printf("Request len: %lu\n", strlen(req));
 
   close(new_sockfd);
  }
