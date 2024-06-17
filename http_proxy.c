@@ -286,7 +286,7 @@ int main()
     http_data_len = strlen(data) - 4; // minus four for the double leading CRLF
    }
 
-   printf("\n[>] Initial response bytes received from dest server: %d\n", dest_recv_len);
+   printf("\n>>>> Initial response bytes received from dest server: %d\n", dest_recv_len);
    printf("** Initial content length received: %lu\n", http_data_len);
    printf("** Expected total content length: %s\n", content_len_str);
 
@@ -346,7 +346,7 @@ int main()
       break;
      }
 
-     printf("\n[>] Additional bytes received from dest server: %d\n", dest_recv_len);
+     printf("\n>>>> Additional bytes received from dest server: %d\n", dest_recv_len);
 
      dest_recv_len_total += dest_recv_len;
 
@@ -364,6 +364,11 @@ int main()
 
      printf("[+] Bytes sent back to client: %d\n", bytes_sent);
 
+     //
+     // free buffer
+     //
+     free(dest_buf);
+
      if (dest_recv_len_total >= content_len)
      {
       break;
@@ -378,7 +383,6 @@ int main()
    // free buffer
    //
    free(host_addr);
-   free(dest_buf);
 
    break;
   }
