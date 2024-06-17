@@ -86,7 +86,7 @@ int main()
    exit(1);
   }
 
-  printf("\n**New connection\n");
+  printf("\n\n--------------------------------\n\n**** New connection\n\n--------------------------------\n\n");
 
   if (!fork()) // child process
   {
@@ -113,11 +113,11 @@ int main()
    }
    else if (recv_len == 0)
    {
-    printf("closing connection\n");
+    printf("[-] Closing peer connection from client...\n");
     exit(0);
    }
 
-   printf("RECEIVED:\n");
+   printf("[+] RECEIVED:\n\n");
    printf("%s", (char *)buf);
 
    strcat(req, (char *)buf);
@@ -191,13 +191,13 @@ int main()
    //
    // ** HOSTNAME WHITELIST
    //
-   if (!(strstr(host_addr, "httpbin.org") != NULL || strstr(host_addr, "httpforever.com") != NULL || strstr(host_addr, "neverssl.com") != NULL))
+   if (!(strstr(host_addr, "httpbin.org") != NULL || strstr(host_addr, "httpforever.com") != NULL || strstr(host_addr, "neverssl.com") != NULL || strstr(host_addr, "www.weather.gov.sg") != NULL))
    {
-    printf("abort\n");
+    printf("Host not specified in whitelist, aborting...\n");
     exit(1);
    }
 
-   printf("Proxying traffic to host: %s\n", host_addr);
+   printf("\n[+] Proxying traffic to host: %s\n\n", host_addr);
    getaddrinfo(host_addr, "80", &hints, &res);
 
    //
@@ -292,9 +292,9 @@ int main()
     http_data_len = strlen(data) - 4; // minus four for the double leading CRLF
    }
 
-   printf("\n****Initial response bytes from dest server: %d\n", dest_recv_len);
-   printf("Initial response body data length: %lu\n", http_data_len);
-   printf("Expected content length: %s\n", content_len_str);
+   printf("\n[>] Initial response bytes received from dest server: %d\n", dest_recv_len);
+   printf("** Initial response body data length: %lu\n", http_data_len);
+   printf("** Expected content length: %s\n", content_len_str);
    // printf("%s\n", dest_buf);
 
    //
@@ -303,13 +303,13 @@ int main()
 
    int bytes_sent;
 
-   if ((bytes_sent = send(new_sockfd, initial_dest_res_buf, dest_recv_len_total, 0)) == -1)
+   if ((bytes_sent = send(new_sockfd, initial_dest_res_buf, dest_recv_len, 0)) == -1)
    {
     perror("send() error: \n");
     exit(1);
    }
 
-   printf("\nIntial response bytes sent back to client: %d\n", bytes_sent);
+   printf("\n[+] Intial response bytes sent back to client: %d\n", bytes_sent);
 
    int content_len = atoi(content_len_str);
 
@@ -318,7 +318,7 @@ int main()
    //
    if (((unsigned long int)content_len - http_data_len) == 0)
    {
-    printf("Sent back content length of %lu to client\nClosing connection...\n", http_data_len);
+    printf("[+] Sent back content length of %lu to client\nClosing connection peer connection from client...\n", http_data_len);
    }
    else
    {
@@ -328,8 +328,8 @@ int main()
     //
 
     unsigned long int remaining_content_len = (unsigned long int)content_len - http_data_len;
-    printf("%lu\n", remaining_content_len);
-    exit(1);
+
+    printf("\n--------------------------------\n\nRemaining content length after initial response: %lu\n\n--------------------------------\n", remaining_content_len);
 
     //
     // RECEIVE additional chunked response
@@ -347,11 +347,11 @@ int main()
      }
      else if (dest_recv_len == 0)
      {
-      printf("closing connection\n");
+      printf("[-] Closing peer connection from client...\n");
       break;
      }
 
-     printf("\n****Received bytes from dest server: %d\n", dest_recv_len);
+     printf("\n[>] Additional bytes received from dest server: %d\n", dest_recv_len);
 
      dest_recv_len_total += dest_recv_len;
 
@@ -361,17 +361,24 @@ int main()
 
      int bytes_sent;
 
-     if ((bytes_sent = send(new_sockfd, dest_buf, dest_recv_len_total, 0)) == -1)
+     if ((bytes_sent = send(new_sockfd, dest_buf, dest_recv_len, 0)) == -1)
      {
       perror("send() error: \n");
       exit(1);
      }
 
-     printf("Bytes sent back to client: %d\n", bytes_sent);
+     printf("[+] Bytes sent back to client: %d\n", bytes_sent);
+
+     if (dest_recv_len_total >= content_len)
+     {
+      break;
+     }
     }
    }
 
-   printf("\n--------------------------------\nTotal bytes sent to client from host %s: %d\n--------------------------------\n", host_addr, dest_recv_len_total);
+   printf("\n--------------------------------\n\nTotal bytes proxied from host %s to client (including HTTP response headers): %d\n\n--------------------------------\n", host_addr, dest_recv_len_total);
+   printf("[-] Closing peer connection from client...\n\n");
+
    break;
   }
 
