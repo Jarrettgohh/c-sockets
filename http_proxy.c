@@ -369,6 +369,9 @@ int main()
      //
      free(dest_buf);
 
+     //
+     // Received expected content length worth of data - break
+     //
      if (dest_recv_len_total >= content_len)
      {
       break;
