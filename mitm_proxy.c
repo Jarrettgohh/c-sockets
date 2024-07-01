@@ -132,7 +132,6 @@ int main()
          sprintf(msg, "HTTP/1.1 200 OK\ncontent-length: %s\n\n%s", payload_len_str, payload);
          printf("[+] SENDING PAYLOAD:\n %s\n\n", msg);
 
-         // char *msg = "HTTP/1.1 200 OK\ncontent-length: 12\n\nHELLO FRIEND";
          int msg_len, bytes_sent;
 
          msg_len = strlen(msg);

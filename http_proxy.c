@@ -182,7 +182,7 @@ int main()
    //
    // ** HOSTNAME WHITELIST
    //
-   if (!(strstr(host_addr, "httpbin.org") != NULL || strstr(host_addr, "httpforever.com") != NULL || strstr(host_addr, "neverssl.com") != NULL || strstr(host_addr, "www.weather.gov.sg") != NULL))
+   if (!(strstr(host_addr, "httpbin.org") != NULL || strstr(host_addr, "httpforever.com") != NULL || strstr(host_addr, "neverssl.com") != NULL))
    {
     printf("Host not specified in whitelist, aborting...\n");
     exit(1);
