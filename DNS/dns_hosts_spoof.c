@@ -12,11 +12,7 @@
 #include <string.h>
 #include <errno.h>
 
-#include <endian.h>
-#include <ares.h>
-
-#include "dns.h"
-#include "dns_struct_def.h"
+#include "dns_def.h"
 
 #define PORT "8090"
 
@@ -92,61 +88,46 @@ int main()
   }
 
   printf("recv()'d %d bytes of data in buf\n", recv_len);
-
-  // buf[recv_len] = 0x0;
-
   printf("[+] RECEIVED:\n\n");
-  // printf("%s", (char *)buf);
 
-  printf("DIRECT CAST:\n");
   printf("id: %u\n", ((s_dns_hs *)buf)->id);
   printf("qr: %u\n", ((s_dns_hs *)buf)->flags.qr);
   printf("opcode: %u\n", ((s_dns_hs *)buf)->flags.opcode);
   printf("AA: %u\n", ((s_dns_hs *)buf)->flags.aa);
-  printf("qcount: %i\n", ntohs(((s_dns_hs *)buf)->qdcount));
 
-  printf("qtype: %s\n", tr_dns_type_str((ntohs(((s_dns_qs *)buf)->type))));
-  printf("qclass: %s\n", tr_dns_class_str(ntohs(((s_dns_qs *)buf)->class)));
-  exit(1);
+  ssize_t n;       // number of questions
+  s_dns_hs *hs;    // headers
+  s_dns_qs *qs;    // questions
+  uint8_t *offset; // offset of question from start of buffer, essentially the size of the header
+  uint8_t qname[DNS_QNAME_MAX_LEN];
+  size_t qname_len;
 
-  int status;
+  hs = (s_dns_hs *)buf;
+  n = (ssize_t)ntohs(hs->qdcount);
 
-  status = ares_library_init(ARES_LIB_INIT_ALL);
-
-  if (status != ARES_SUCCESS)
+  offset = buf + sizeof(*hs);
+  printf("# question section: %zu\n", (size_t)n);
+  while (n-- > 0)
   {
-   printf("ares_library_init: %s\n", ares_strerror(status));
-   return 1;
+   qname_len = 0;
+   parse_label(buf, offset, qname, &qname_len);
+   if (qname_len == 0)
+   {
+    qname[0] = 0;
+   }
+   offset += qname_len;
+   qs = (s_dns_qs *)offset;
+
+   printf(" -> %s  %s  %s\n", qname,
+          tr_dns_type_str(ntohs(qs->type)),
+          tr_dns_class_str(ntohs(qs->class)));
+
+   offset += sizeof(*qs);
   }
 
-  // struct ares_query *query = (struct ares_query *)buf;
-  // printf("%s\n", query->qtype);
-
-  ares_status_t ares_res;
-  ares_dns_record_t *dnsrec;
-
-  ares_res = ares_dns_parse((const unsigned char *)buf, buf_length, ARES_DNS_PARSE_AN_BASE_RAW, &dnsrec);
-
-  if (ares_res != ARES_SUCCESS)
-  {
-
-   perror("ares_dns_parse() error: \n");
-  }
-
-  // struct ares_question *ap;
-
-  // printf("%lu\n", sizeof(struct ares_dns_record));
-  // printf("%lu\n", (struct ares_answer *)dnsrec->type);
-  //  printf("after res_dns_parse():\n");
-  //  printf("id: %i\n", ((s_dns_hs *)dnsrec)->id);
-  //  printf("qr: %i\n", ((s_dns_hs *)dnsrec)->flags.qr);
-  //  printf("opcode: %i\n", ((s_dns_hs *)dnsrec)->flags.opcode);
-  //  printf("AA: %i\n", ((s_dns_hs *)dnsrec)->flags.aa);
-  //  printf("qcount: %i\n", ntohs(((s_dns_hs *)dnsrec)->qdcount));
-  //  printf("%i\n", ((s_dns_hs *)dnsrec)->flags.opcode);
-
-  ares_dns_record_destroy(dnsrec);
-  ares_library_cleanup();
+  // printf("qcount: %i\n", ntohs(((s_dns_hs *)buf)->qdcount));
+  // printf("qtype: %s\n", tr_dns_type_str((ntohs(((s_dns_qs *)buf)->type))));
+  // printf("qclass: %s\n", tr_dns_class_str(ntohs(((s_dns_qs *)buf)->class)));
  }
 
  return 0;

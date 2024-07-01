@@ -1,0 +1,16 @@
+
+https://www.ietf.org/rfc/rfc1035.txt
+
+  MESSAGE FORMAT
+  
+  +---------------------+
+  |        Header       |
+  +---------------------+
+  |       Question      | the question for the name server
+  +---------------------+
+  |        Answer       | RRs answering the question                 ~~~~~|
+  +---------------------+
+  |      Authority      | RRs pointing toward an authority                |>>> Resource Record (RR) section
+   +---------------------+
+  |      Additional     | RRs holding additional information         ~~~~~|
+  +---------------------+
