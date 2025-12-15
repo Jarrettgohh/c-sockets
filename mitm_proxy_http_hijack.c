@@ -16,6 +16,7 @@
 
 int main()
 {
+    
  struct addrinfo hints;
  struct addrinfo *res; // contains the results from the getaddrinfo() function call
 
